@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI/Automation ROI Calculator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.10/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div id="root"></div>
+    <script type="text/babel">
+        function ROICalculator() {
+            const [hourlyRate, setHourlyRate] = React.useState('');
+            const [timeRequired, setTimeRequired] = React.useState('');
+            const [timeSavedInput, setTimeSavedInput] = React.useState('');
+            const [timeSavedType, setTimeSavedType] = React.useState('percentage');
+            const [result, setResult] = React.useState(null);
+            const [error, setError] = React.useState('');
+
+            const calculateROI = () => {
+                setError('');
+                setResult(null);
+
+                try {
+                    const hr = parseFloat(hourlyRate);
+                    const tr = parseFloat(timeRequired);
+                    const tsi = parseFloat(timeSavedInput);
+
+                    if (isNaN(hr) || isNaN(tr) || isNaN(tsi)) {
+                        setError('Please enter valid numerical values.');
+                        return;
+                    }
+
+                    if (hr < 0 || tr < 0 || tsi < 0) {
+                        setError('Please enter valid positive numbers.');
+                        return;
+                    }
+
+                    let timeSaved;
+                    if (timeSavedType === 'percentage') {
+                        if (tsi > 100) {
+                            setError('Percentage should be 0-100.');
+                            return;
+                        }
+                        timeSaved = tr * (tsi / 100);
+                    } else {
+                        timeSaved = tsi / 60; // Convert minutes to hours
+                        if (timeSaved > tr) {
+                            setError('Time saved cannot exceed time required.');
+                            return;
+                        }
+                    }
+
+                    const costWithoutAI = hr * tr;
+                    const timeWithAI = tr - timeSaved;
+                    const costWithAI = hr * timeWithAI;
+                    const savings = costWithoutAI - costWithAI;
+                    const roiPercentage = costWithoutAI > 0 ? (savings / costWithoutAI) * 100 : 0;
+
+                    setResult({
+                        costWithoutAI,
+                        costWithAI,
+                        savings,
+                        timeSaved,
+                        roiPercentage
+                    });
+                } catch (e) {
+                    setError('An error occurred during calculation.');
+                }
+            };
+
+            return (
+                <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+                    <h1 className="text-2xl font-bold mb-6 text-center">AI/Automation ROI Calculator</h1>
+                    
+                    <div className="mb-4">
+                        <label className="block text-gray-700 mb-2">Hourly Rate ($):</label>
+                        <input
+                            type="number"
+                            value={hourlyRate}
+                            onChange={(e) => setHourlyRate(e.target.value)}
+                            className="w-full p-2 border rounded"
+                            placeholder="Enter hourly rate"
+                            step="0.01"
+                        />
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="block text-gray-700 mb-2">Time Required for Task (hours):</label>
+                        <input
+                            type="number"
+                            value={timeRequired}
+                            onChange={(e) => setTimeRequired(e.target.value)}
+                            className="w-full p-2 border rounded"
+                            placeholder="Enter time required"
+                            step="0.01"
+                        />
+                    </div>
+
+                    <div className="mb-4">
+                        <label className="block text-gray-700 mb-2">Time Saved by AI:</label>
+                        <select
+                            value={timeSavedType}
+                            onChange={(e) => setTimeSavedType(e.target.value)}
+                            className="w-full p-2 border rounded mb-2"
+                        >
+                            <option value="percentage">Percentage (%)</option>
+                            <option value="minutes">Minutes</option>
+                        </select>
+                        <input
+                            type="number"
+                            value={timeSavedInput}
+                            onChange={(e) => setTimeSavedInput(e.target.value)}
+                            className="w-full p-2 border rounded"
+                            placeholder={`Enter time saved (${timeSavedType})`}
+                            step={timeSavedType === 'percentage' ? '0.01' : '1'}
+                        />
+                    </div>
+
+                    <button
+                        onClick={calculateROI}
+                        className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+                    >
+                        Calculate ROI
+                    </button>
+
+                    {error && (
+                        <div className="mt-4 text-red-500 text-center">{error}</div>
+                    )}
+
+                    {result && (
+                        <div className="mt-4 text-gray-700">
+                            <h2 className="text-lg font-semibold">Results:</h2>
+                            <p>Original Task Cost: ${result.costWithoutAI.toFixed(2)}</p>
+                            <p>Cost with AI: ${result.costWithAI.toFixed(2)}</p>
+                            <p>Savings: ${result.savings.toFixed(2)}</p>
+                            <p>Time Saved: {result.timeSaved.toFixed(2)} hours</p>
+                            <p>ROI: {result.roiPercentage.toFixed(2)}%</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ROICalculator />);
+    </script>
+</body>
+</html>
